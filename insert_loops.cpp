@@ -35,22 +35,12 @@ class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
   MyASTVisitor(Rewriter &R) : TheRewriter(R) {}
 
-  bool VisitStmt(Stmt *s) {
-    // Only care about If statements.
-    if (isa<IfStmt>(s)) {
-      IfStmt *IfStatement = cast<IfStmt>(s);
-      Stmt *Then = IfStatement->getThen();
-
-      TheRewriter.InsertText(Then->getLocStart(), "// the 'if' part\n", true,
-                             true);
-
-      Stmt *Else = IfStatement->getElse();
-      if (Else)
-        TheRewriter.InsertText(Else->getLocStart(), "// the 'else' part\n",
-                               true, true);
-    }
-
-    return true;
+  bool VisitFunctionDecl(FunctionDecl * f) {
+	  //f->dump();
+	  SourceLocation locToUse = f->getBody()->getLocStart().getLocWithOffset(1);
+	  TheRewriter.InsertText(locToUse, "Start of Function Decl\n", true, true);
+	  TheRewriter.InsertText(f->getLocEnd(), "End of Function Decl\n", true, true);
+	  return true;
   }
 
 private:
@@ -88,7 +78,6 @@ int main(int argc, char * argv[]) {
   TheCompInst.createDiagnostics();
 
   LangOptions &lo = TheCompInst.getLangOpts();
-  lo.CPlusPlus = 1;
   lo.OpenCL = 1;
   
   // Initialize target info with the default triple for our platform.
@@ -98,9 +87,6 @@ int main(int argc, char * argv[]) {
   TargetInfo *TI =
       TargetInfo::CreateTargetInfo(TheCompInst.getDiagnostics(), TO);
   TheCompInst.setTarget(TI);
-  
-  // For OpenCL (driver?)
-  // lo.getOpenCLVersionTriple();
 
   TheCompInst.createFileManager();
   FileManager &FileMgr = TheCompInst.getFileManager();
